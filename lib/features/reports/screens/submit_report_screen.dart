@@ -1,0 +1,386 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/widgets/app_button.dart';
+
+class SubmitReportScreen extends StatefulWidget {
+  const SubmitReportScreen({super.key});
+  @override
+  State<SubmitReportScreen> createState() => _SubmitReportScreenState();
+}
+
+class _SubmitReportScreenState extends State<SubmitReportScreen> {
+  final _api          = ApiService();
+  final _picker       = ImagePicker();
+  final _titleCtrl    = TextEditingController();
+  final _descCtrl     = TextEditingController();
+  final _locationCtrl = TextEditingController();
+  final _latCtrl      = TextEditingController();
+  final _lngCtrl      = TextEditingController();
+  final _areaCtrl     = TextEditingController();
+  final _treesCtrl    = TextEditingController();
+
+  String? _reportType;
+  String? _severity = 'medium';
+  File?   _photo;
+  bool    _loading = false;
+  String? _error;
+
+  static const _types = {
+    'sawit_expansion': '🌴 Ekspansi Sawit',
+    'illegal_logging': '🪓 Penebangan Liar',
+    'forest_fire':     '🔥 Kebakaran Hutan',
+    'land_clearing':   '🚜 Pembukaan Lahan',
+    'mining':          '⛏️ Pertambangan',
+    'other':           '📍 Lainnya',
+  };
+
+  static const _severities = {
+    'low':      'Rendah',
+    'medium':   'Sedang',
+    'high':     'Tinggi',
+    'critical': 'Kritis',
+  };
+
+  Future<void> _pickPhoto() async {
+    final img = await _picker.pickImage(
+      source: ImageSource.gallery, imageQuality: 80, maxWidth: 1280);
+    if (img != null) setState(() => _photo = File(img.path));
+  }
+
+  Future<void> _submit() async {
+    if (_titleCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Judul wajib diisi'); return;
+    }
+    if (_descCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Deskripsi wajib diisi'); return;
+    }
+    if (_latCtrl.text.trim().isEmpty || _lngCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Koordinat wajib diisi'); return;
+    }
+
+    setState(() { _loading = true; _error = null; });
+    try {
+      final formData = FormData.fromMap({
+        'title':         _titleCtrl.text.trim(),
+        'description':   _descCtrl.text.trim(),
+        'lat':           _latCtrl.text.trim(),
+        'lng':           _lngCtrl.text.trim(),
+        'location_text': _locationCtrl.text.trim(),
+        if (_reportType != null) 'report_type': _reportType,
+        'severity':      _severity ?? 'medium',
+        if (_areaCtrl.text.isNotEmpty) 'area_affected': _areaCtrl.text.trim(),
+        if (_treesCtrl.text.isNotEmpty) 'trees_lost': _treesCtrl.text.trim(),
+        if (_photo != null)
+          'photo': await MultipartFile.fromFile(
+            _photo!.path, filename: 'photo.jpg'),
+      });
+      await _api.createReport(formData);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Laporan berhasil dikirim!'),
+            backgroundColor: AppColors.greenMd));
+        context.pop();
+      }
+    } catch (e) {
+      setState(() => _error = 'Gagal mengirim laporan. Coba lagi.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.offWhite,
+      appBar: AppBar(
+        backgroundColor: AppColors.green,
+        title: Text('Buat Laporan',
+          style: GoogleFonts.syne(
+            fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_error != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.error_outline_rounded,
+                    size: 16, color: AppColors.error),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppColors.error))),
+                ]),
+              ),
+
+            // Photo upload
+            GestureDetector(
+              onTap: _pickPhoto,
+              child: Container(
+                height: 180, width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _photo != null ? AppColors.greenMd : AppColors.border,
+                    width: _photo != null ? 2 : 1.5,
+                    style: _photo != null ? BorderStyle.solid : BorderStyle.solid,
+                  ),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: _photo != null
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.file(_photo!, fit: BoxFit.cover),
+                          Positioned(
+                            top: 8, right: 8,
+                            child: GestureDetector(
+                              onTap: () => setState(() => _photo = null),
+                              child: Container(
+                                width: 28, height: 28,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  shape: BoxShape.circle),
+                                child: const Icon(Icons.close_rounded,
+                                  size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 52, height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.offWhite,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.add_photo_alternate_outlined,
+                              size: 28, color: AppColors.textLt),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('Tambah Foto Bukti',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14, fontWeight: FontWeight.w600,
+                              color: AppColors.textMd)),
+                          Text('Opsional — Tap untuk memilih',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12, color: AppColors.textLt)),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            _buildCard(children: [
+              _label('Judul Laporan *'),
+              const SizedBox(height: 8),
+              _Input(controller: _titleCtrl, hint: 'Contoh: Penebangan liar di area X'),
+              const SizedBox(height: 16),
+              _label('Deskripsi *'),
+              const SizedBox(height: 8),
+              _Input(controller: _descCtrl, hint: 'Jelaskan situasi secara detail...', maxLines: 4),
+            ]),
+            const SizedBox(height: 14),
+
+            _buildCard(children: [
+              _label('Jenis Ancaman'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8, runSpacing: 8,
+                children: _types.entries.map((e) {
+                  final active = _reportType == e.key;
+                  return GestureDetector(
+                    onTap: () => setState(() => _reportType = e.key),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.green : AppColors.offWhite,
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: active ? AppColors.green : AppColors.border, width: 1.5),
+                      ),
+                      child: Text(e.value,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12.5, fontWeight: FontWeight.w500,
+                          color: active ? Colors.white : AppColors.textMd)),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ]),
+            const SizedBox(height: 14),
+
+            _buildCard(children: [
+              _label('Tingkat Keparahan'),
+              const SizedBox(height: 10),
+              Row(
+                children: _severities.entries.map((e) {
+                  final active = _severity == e.key;
+                  final color = AppColors.severityColor(e.key);
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _severity = e.key),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: active ? color : AppColors.offWhite,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: active ? color : AppColors.border, width: 1.5),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 10, height: 10,
+                              decoration: BoxDecoration(
+                                color: active ? Colors.white : color,
+                                shape: BoxShape.circle),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(e.value,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 10, fontWeight: FontWeight.w600,
+                                color: active ? Colors.white : AppColors.textMd),
+                              textAlign: TextAlign.center),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ]),
+            const SizedBox(height: 14),
+
+            _buildCard(children: [
+              _label('Lokasi'),
+              const SizedBox(height: 8),
+              _Input(controller: _locationCtrl, hint: 'Nama lokasi (desa, kecamatan, dll)'),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: _Input(controller: _latCtrl,
+                  hint: 'Latitude', keyboardType: TextInputType.number)),
+                const SizedBox(width: 12),
+                Expanded(child: _Input(controller: _lngCtrl,
+                  hint: 'Longitude', keyboardType: TextInputType.number)),
+              ]),
+              const SizedBox(height: 6),
+              Text('Buka Google Maps untuk mendapatkan koordinat.',
+                style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textLt)),
+            ]),
+            const SizedBox(height: 14),
+
+            _buildCard(children: [
+              _label('Data Kerusakan (Opsional)'),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Luas Terdampak (ha)'),
+                    const SizedBox(height: 6),
+                    _Input(controller: _areaCtrl, hint: 'Mis. 10.5',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  ],
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Pohon Hilang'),
+                    const SizedBox(height: 6),
+                    _Input(controller: _treesCtrl, hint: 'Mis. 200',
+                      keyboardType: TextInputType.number),
+                  ],
+                )),
+              ]),
+            ]),
+            const SizedBox(height: 24),
+
+            AppButton(
+              label: 'Kirim Laporan',
+              loading: _loading,
+              onTap: _submit,
+              width: double.infinity,
+            ),
+            const SizedBox(height: 80),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required List<Widget> children}) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+  );
+
+  Widget _label(String text) => Text(text,
+    style: GoogleFonts.dmSans(
+      fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDk));
+}
+
+class _Input extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  const _Input({
+    required this.controller,
+    required this.hint,
+    this.maxLines = 1,
+    this.keyboardType,
+  });
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    maxLines: maxLines,
+    keyboardType: keyboardType,
+    style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textDk),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textLt),
+      filled: true, fillColor: AppColors.offWhite,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.greenMd, width: 1.5)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      isDense: true,
+    ),
+  );
+}
