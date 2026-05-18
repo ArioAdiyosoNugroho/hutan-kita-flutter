@@ -235,12 +235,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _          => 'Menunggu',
   };
 
-  String _fmtAmt(dynamic amt) {
-    final n = (amt as num).toInt();
-    if (n >= 1000000) return 'Rp ${(n/1000000).toStringAsFixed(1)}jt';
-    if (n >= 1000)    return 'Rp ${(n/1000).round()}rb';
-    return 'Rp $n';
-  }
+String _fmtAmt(dynamic amt) {
+  // Handle kalau API kirim string
+  final n = (amt is String ? int.tryParse(amt) ?? 0 : (amt as num).toInt());
+  if (n >= 1000000) return 'Rp ${(n/1000000).toStringAsFixed(1)}jt';
+  if (n >= 1000)    return 'Rp ${(n/1000).round()}rb';
+  return 'Rp $n';
+}
 }
 
 class _QuickNavCard extends StatelessWidget {

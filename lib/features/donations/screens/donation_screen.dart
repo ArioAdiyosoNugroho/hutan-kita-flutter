@@ -97,6 +97,7 @@ class _DonationScreenState extends State<DonationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min, // ✅ tambah ini
                   children: [
                     Text('DONASI POHON',
                       style: GoogleFonts.dmSans(
@@ -106,7 +107,8 @@ class _DonationScreenState extends State<DonationScreen> {
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.syne(
-                          fontSize: 28, fontWeight: FontWeight.w800,
+                          fontSize: 24, // ✅ kecilkan dari 28 → 24
+                          fontWeight: FontWeight.w800,
                           color: Colors.white, height: 1.1),
                         children: const [
                           TextSpan(text: 'Rp 5.000 = 1 Pohon\n'),

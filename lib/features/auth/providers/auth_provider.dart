@@ -37,6 +37,7 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.authenticated;
     } catch (_) {
       await StorageService.deleteToken();
+      _user = null;
       _status = AuthStatus.unauthenticated;
       _error = 'Sesi telah berakhir, silakan login kembali';
     }
@@ -84,6 +85,7 @@ class AuthProvider extends ChangeNotifier {
     try { await _api.logout(); } catch (_) {}
     await StorageService.deleteToken();
     _user   = null;
+    _error  = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();
   }

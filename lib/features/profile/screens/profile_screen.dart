@@ -101,10 +101,14 @@ class ProfileScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(children: [
-                                  Text(user.name,
-                                    style: GoogleFonts.syne(
-                                      fontSize: 20, fontWeight: FontWeight.w700,
-                                      color: Colors.white)),
+                                  Flexible(
+                                    child: Text(user.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.syne(
+                                        fontSize: 20, fontWeight: FontWeight.w700,
+                                        color: Colors.white)),
+                                  ),
                                   if (user.isAdmin) ...[
                                     const SizedBox(width: 8),
                                     Container(
@@ -215,25 +219,30 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context, AuthProvider auth) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Keluar?',
           style: GoogleFonts.syne(fontWeight: FontWeight.w700)),
         content: Text('Anda akan keluar dari akun ini.',
           style: GoogleFonts.dmSans()),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
             child: Text('Batal',
               style: GoogleFonts.dmSans(color: AppColors.textMd))),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
             child: Text('Keluar',
               style: GoogleFonts.dmSans(color: AppColors.error,
                 fontWeight: FontWeight.w600))),
         ],
       ),
     );
-    if (ok == true) await auth.logout();
+
+    if (ok == true) {
+      await auth.logout();
+      if (!context.mounted) return;
+      context.go('/login');
+    }
   }
 }
 
@@ -262,17 +271,21 @@ class _StatBox extends StatelessWidget {
           child: Icon(icon, size: 20, color: color),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(value,
-              style: GoogleFonts.syne(
-                fontSize: 22, fontWeight: FontWeight.w700,
-                color: AppColors.textDk, height: 1)),
-            Text(label,
-              style: GoogleFonts.dmSans(
-                fontSize: 11, color: AppColors.textLt)),
-          ],
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value,
+                style: GoogleFonts.syne(
+                  fontSize: 22, fontWeight: FontWeight.w700,
+                  color: AppColors.textDk, height: 1)),
+              Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.dmSans(
+                  fontSize: 11, color: AppColors.textLt)),
+            ],
+          ),
         ),
       ],
     ),

@@ -49,7 +49,7 @@ class Report {
         lat:          (json['lat'] as num?)?.toDouble(),
         lng:          (json['lng'] as num?)?.toDouble(),
         locationText: json['location_text'],
-        reportType:   json['report_type'],
+        reportType:   json['report_type'] ?? json['type'],
         severity:     json['severity'] ?? 'low',
         status:       json['status'] ?? 'pending',
         photoPath:    json['photo_path'],
@@ -82,6 +82,7 @@ class Report {
       case 'forest_fire':     return 'Kebakaran Hutan';
       case 'land_clearing':   return 'Pembukaan Lahan';
       case 'mining':          return 'Pertambangan';
+      case 'other':           return 'Lainnya';
       default:                return 'Lainnya';
     }
   }
@@ -93,6 +94,7 @@ class Report {
       case 'forest_fire':     return '🔥';
       case 'land_clearing':   return '🚜';
       case 'mining':          return '⛏️';
+      case 'other':           return '📍';
       default:                return '📍';
     }
   }

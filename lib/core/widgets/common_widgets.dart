@@ -1,9 +1,25 @@
+// lib/core/widgets/common_widgets.dart
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_text_styles.dart';
 
-// ── Loading skeleton
+// ─────────────────────────────────────────────────────────────────
+// SHIMMER
+// ─────────────────────────────────────────────────────────────────
+class ShimmerWrap extends StatelessWidget {
+  final Widget child;
+  const ShimmerWrap({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Shimmer.fromColors(
+    baseColor:      const Color(0xFFE5E7EB),
+    highlightColor: const Color(0xFFF9FAFB),
+    child: child,
+  );
+}
+
 class ShimmerBox extends StatelessWidget {
   final double width;
   final double height;
@@ -17,20 +33,18 @@ class ShimmerBox extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: const Color(0xFFE5E7EB),
-        highlightColor: const Color(0xFFF9FAFB),
-        child: Container(
-          width: width, height: height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(radius),
-          ),
-        ),
-      );
+  Widget build(BuildContext context) => Container(
+    width: width, height: height,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(radius),
+    ),
+  );
 }
 
-// ── Empty state
+// ─────────────────────────────────────────────────────────────────
+// EMPTY STATE
+// ─────────────────────────────────────────────────────────────────
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -47,43 +61,45 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.offWhite,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Icon(icon, size: 30, color: AppColors.textLt),
-              ),
-              const SizedBox(height: 16),
-              Text(title,
-                style: GoogleFonts.syne(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textDk),
-                textAlign: TextAlign.center),
-              if (subtitle != null) ...[
-                const SizedBox(height: 6),
-                Text(subtitle!,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13, color: AppColors.textLt),
-                  textAlign: TextAlign.center),
-              ],
-              if (action != null) ...[
-                const SizedBox(height: 20),
-                action!,
-              ],
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.offWhite,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: SizedBox(
+              width: 72, height: 72,
+              child: Icon(icon, size: 30, color: AppColors.textLt),
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 16),
+          Text(title,
+            style: AppTextStyles.heading3,
+            textAlign: TextAlign.center),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(subtitle!,
+              style: AppTextStyles.label,
+              textAlign: TextAlign.center),
+          ],
+          if (action != null) ...[
+            const SizedBox(height: 20),
+            action!,
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
-// ── Error state
+// ─────────────────────────────────────────────────────────────────
+// ERROR STATE
+// ─────────────────────────────────────────────────────────────────
 class ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -92,82 +108,87 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.error_outline_rounded,
-                  size: 30, color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              Text('Terjadi Kesalahan',
-                style: GoogleFonts.syne(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textDk)),
-              const SizedBox(height: 6),
-              Text(message,
-                style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textLt),
-                textAlign: TextAlign.center),
-              if (onRetry != null) ...[
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: onRetry,
-                  child: Text('Coba Lagi',
-                    style: GoogleFonts.dmSans(
-                      color: AppColors.greenMd, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0x14EF4444),
+              shape: BoxShape.circle,
+            ),
+            child: SizedBox(
+              width: 72, height: 72,
+              child: Icon(Icons.error_outline_rounded,
+                size: 30, color: AppColors.error),
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 16),
+          Text('Terjadi Kesalahan', style: AppTextStyles.heading3),
+          const SizedBox(height: 6),
+          Text(message,
+            style: AppTextStyles.label,
+            textAlign: TextAlign.center),
+          if (onRetry != null) ...[
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: onRetry,
+              child: Text('Coba Lagi',
+                style: AppTextStyles.captionGreen
+                  .copyWith(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
-// ── Section header
+// ─────────────────────────────────────────────────────────────────
+// SECTION HEADER
+// ─────────────────────────────────────────────────────────────────
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? trailing;
 
-  const SectionHeader({super.key, required this.title, this.subtitle, this.trailing});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                  style: GoogleFonts.syne(
-                    fontSize: 24, fontWeight: FontWeight.w700,
-                    color: AppColors.textDk, letterSpacing: -0.5)),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(subtitle!,
-                    style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textLt)),
-                ],
-              ],
-            ),
-          ),
-          if (trailing != null) trailing!,
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: AppTextStyles.heading2),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(subtitle!, style: AppTextStyles.tiny),
+            ],
+          ],
+        ),
+      ),
+      if (trailing != null) trailing!,
+    ],
+  );
 }
 
-// ── Stat chip (small info pill)
+// ─────────────────────────────────────────────────────────────────
+// STAT CHIP — fixed overflow
+// ─────────────────────────────────────────────────────────────────
 class StatChip extends StatelessWidget {
   final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
+  final String   value;
+  final String   label;
+  final Color    color;
 
   const StatChip({
     super.key,
@@ -178,38 +199,42 @@ class StatChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: AppColors.offWhite,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 17, color: color),
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: AppColors.offWhite,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Padding(
+      // ✅ vertical 10 — lebih compact, tidak overflow
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value,
-                  style: GoogleFonts.syne(
-                    fontSize: 22, fontWeight: FontWeight.w700,
-                    color: AppColors.textDk, height: 1)),
-                const SizedBox(height: 2),
-                Text(label,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 11, color: AppColors.textLt)),
-              ],
+            // ✅ 32x32 bukan 38x38
+            child: SizedBox(
+              width: 32, height: 32,
+              child: Icon(icon, size: 16, color: color),
             ),
-          ],
-        ),
-      );
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,       // ✅ wajib ada
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(value, style: AppTextStyles.statValue),
+              Text(label, style: AppTextStyles.tiny),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }

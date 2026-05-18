@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart'; // ✅ tambah ini
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -25,11 +27,13 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
   final _areaCtrl     = TextEditingController();
   final _treesCtrl    = TextEditingController();
 
-  String? _reportType;
-  String? _severity = 'medium';
-  File?   _photo;
-  bool    _loading = false;
-  String? _error;
+  String?     _reportType;
+  String?     _severity = 'medium';
+  File?       _photo;        // mobile
+  Uint8List?  _photoBytes;   // ✅ web
+  String?     _photoName;    // ✅ web
+  bool        _loading = false;
+  String?     _error;
 
   static const _types = {
     'sawit_expansion': '🌴 Ekspansi Sawit',
@@ -47,10 +51,212 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
     'critical': 'Kritis',
   };
 
+  bool get _hasPhoto => kIsWeb ? _photoBytes != null : _photo != null;
+
   Future<void> _pickPhoto() async {
-    final img = await _picker.pickImage(
-      source: ImageSource.gallery, imageQuality: 80, maxWidth: 1280);
-    if (img != null) setState(() => _photo = File(img.path));
+    // Web tidak support kamera, langsung galeri
+    if (kIsWeb) {
+      final img = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1280,
+      );
+      if (img != null && mounted) {
+        final bytes = await img.readAsBytes();
+        setState(() {
+          _photoBytes = bytes;
+          _photoName  = img.name;
+        });
+      }
+      return;
+    }
+
+    // Mobile: tampilkan pilihan kamera / galeri
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(99)),
+            ),
+            Text('Tambah Foto Bukti',
+              style: GoogleFonts.syne(
+                fontSize: 16, fontWeight: FontWeight.w700,
+                color: AppColors.textDk)),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                // Kamera
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      if (!mounted) return;
+                      final img = await _picker.pickImage(
+                        source: ImageSource.camera,
+                        imageQuality: 80,
+                        maxWidth: 1280,
+                      );
+                      if (img != null && mounted) {
+                        setState(() => _photo = File(img.path));
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.green.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.green.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 52, height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.green,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded,
+                              color: Colors.white, size: 26),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('Kamera',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14, fontWeight: FontWeight.w600,
+                              color: AppColors.textDk)),
+                          const SizedBox(height: 2),
+                          Text('Foto langsung',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 11, color: AppColors.textLt)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Galeri
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      if (!mounted) return;
+                      final img = await _picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 80,
+                        maxWidth: 1280,
+                      );
+                      if (img != null && mounted) {
+                        setState(() => _photo = File(img.path));
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.offWhite,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 52, height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.textLt.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(Icons.photo_library_rounded,
+                              color: AppColors.textMd, size: 26),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('Galeri',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14, fontWeight: FontWeight.w600,
+                              color: AppColors.textDk)),
+                          const SizedBox(height: 2),
+                          Text('Pilih dari galeri',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 11, color: AppColors.textLt)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.offWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text('Batal',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: AppColors.textLt)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Widget preview foto (support web & mobile) ────────────────────────────
+  Widget _buildPhotoPreview() {
+    Widget imageWidget;
+
+    if (kIsWeb && _photoBytes != null) {
+      imageWidget = Image.memory(_photoBytes!, fit: BoxFit.cover);
+    } else if (!kIsWeb && _photo != null) {
+      imageWidget = Image.file(_photo!, fit: BoxFit.cover);
+    } else {
+      imageWidget = const SizedBox();
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        imageWidget,
+        Positioned(
+          top: 8, right: 8,
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _photo      = null;
+              _photoBytes = null;
+              _photoName  = null;
+            }),
+            child: Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                shape: BoxShape.circle),
+              child: const Icon(Icons.close_rounded,
+                size: 16, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _submit() async {
@@ -66,6 +272,18 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
 
     setState(() { _loading = true; _error = null; });
     try {
+      MultipartFile? photoFile;
+
+      if (kIsWeb && _photoBytes != null) {
+        // ✅ Web: pakai bytes
+        photoFile = MultipartFile.fromBytes(
+          _photoBytes!, filename: _photoName ?? 'photo.jpg');
+      } else if (!kIsWeb && _photo != null) {
+        // ✅ Mobile: pakai file path
+        photoFile = await MultipartFile.fromFile(
+          _photo!.path, filename: 'photo.jpg');
+      }
+
       final formData = FormData.fromMap({
         'title':         _titleCtrl.text.trim(),
         'description':   _descCtrl.text.trim(),
@@ -76,10 +294,9 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
         'severity':      _severity ?? 'medium',
         if (_areaCtrl.text.isNotEmpty) 'area_affected': _areaCtrl.text.trim(),
         if (_treesCtrl.text.isNotEmpty) 'trees_lost': _treesCtrl.text.trim(),
-        if (_photo != null)
-          'photo': await MultipartFile.fromFile(
-            _photo!.path, filename: 'photo.jpg'),
+        if (photoFile != null) 'photo': photoFile,
       });
+
       await _api.createReport(formData);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,7 +348,7 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                 ]),
               ),
 
-            // Photo upload
+            // ── Photo Upload ──────────────────────────────────────────
             GestureDetector(
               onTap: _pickPhoto,
               child: Container(
@@ -140,33 +357,13 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _photo != null ? AppColors.greenMd : AppColors.border,
-                    width: _photo != null ? 2 : 1.5,
-                    style: _photo != null ? BorderStyle.solid : BorderStyle.solid,
-                  ),
+                    color: _hasPhoto ? AppColors.greenMd : AppColors.border,
+                    width: _hasPhoto ? 2 : 1.5),
                 ),
                 clipBehavior: Clip.hardEdge,
-                child: _photo != null
-                    ? Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.file(_photo!, fit: BoxFit.cover),
-                          Positioned(
-                            top: 8, right: 8,
-                            child: GestureDetector(
-                              onTap: () => setState(() => _photo = null),
-                              child: Container(
-                                width: 28, height: 28,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  shape: BoxShape.circle),
-                                child: const Icon(Icons.close_rounded,
-                                  size: 16, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
+                // ✅ pakai _hasPhoto dan _buildPhotoPreview
+                child: _hasPhoto
+                    ? _buildPhotoPreview()
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -184,7 +381,10 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                             style: GoogleFonts.dmSans(
                               fontSize: 14, fontWeight: FontWeight.w600,
                               color: AppColors.textMd)),
-                          Text('Opsional — Tap untuk memilih',
+                          Text(
+                            kIsWeb
+                                ? 'Opsional — Tap untuk memilih dari galeri'
+                                : 'Opsional — Tap untuk kamera / galeri',
                             style: GoogleFonts.dmSans(
                               fontSize: 12, color: AppColors.textLt)),
                         ],
@@ -200,7 +400,8 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
               const SizedBox(height: 16),
               _label('Deskripsi *'),
               const SizedBox(height: 8),
-              _Input(controller: _descCtrl, hint: 'Jelaskan situasi secara detail...', maxLines: 4),
+              _Input(controller: _descCtrl,
+                hint: 'Jelaskan situasi secara detail...', maxLines: 4),
             ]),
             const SizedBox(height: 14),
 
@@ -214,12 +415,14 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                   return GestureDetector(
                     onTap: () => setState(() => _reportType = e.key),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: active ? AppColors.green : AppColors.offWhite,
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                          color: active ? AppColors.green : AppColors.border, width: 1.5),
+                          color: active ? AppColors.green : AppColors.border,
+                          width: 1.5),
                       ),
                       child: Text(e.value,
                         style: GoogleFonts.dmSans(
@@ -238,7 +441,7 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
               Row(
                 children: _severities.entries.map((e) {
                   final active = _severity == e.key;
-                  final color = AppColors.severityColor(e.key);
+                  final color  = AppColors.severityColor(e.key);
                   return Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() => _severity = e.key),
@@ -249,7 +452,8 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                           color: active ? color : AppColors.offWhite,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: active ? color : AppColors.border, width: 1.5),
+                            color: active ? color : AppColors.border,
+                            width: 1.5),
                         ),
                         child: Column(
                           children: [
@@ -278,18 +482,22 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
             _buildCard(children: [
               _label('Lokasi'),
               const SizedBox(height: 8),
-              _Input(controller: _locationCtrl, hint: 'Nama lokasi (desa, kecamatan, dll)'),
+              _Input(controller: _locationCtrl,
+                hint: 'Nama lokasi (desa, kecamatan, dll)'),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _Input(controller: _latCtrl,
-                  hint: 'Latitude', keyboardType: TextInputType.number)),
+                  hint: 'Latitude',
+                  keyboardType: TextInputType.number)),
                 const SizedBox(width: 12),
                 Expanded(child: _Input(controller: _lngCtrl,
-                  hint: 'Longitude', keyboardType: TextInputType.number)),
+                  hint: 'Longitude',
+                  keyboardType: TextInputType.number)),
               ]),
               const SizedBox(height: 6),
               Text('Buka Google Maps untuk mendapatkan koordinat.',
-                style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textLt)),
+                style: GoogleFonts.dmSans(
+                  fontSize: 11, color: AppColors.textLt)),
             ]),
             const SizedBox(height: 14),
 
@@ -303,7 +511,8 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                     _label('Luas Terdampak (ha)'),
                     const SizedBox(height: 6),
                     _Input(controller: _areaCtrl, hint: 'Mis. 10.5',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true)),
                   ],
                 )),
                 const SizedBox(width: 12),
@@ -340,7 +549,8 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: AppColors.border),
     ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start, children: children),
   );
 
   Widget _label(String text) => Text(text,
@@ -353,6 +563,7 @@ class _Input extends StatelessWidget {
   final String hint;
   final int maxLines;
   final TextInputType? keyboardType;
+
   const _Input({
     required this.controller,
     required this.hint,

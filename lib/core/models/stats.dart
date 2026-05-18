@@ -14,12 +14,26 @@ class ReportStats {
   });
 
   factory ReportStats.fromJson(Map<String, dynamic> json) => ReportStats(
-        totalReports:       json['total_reports'] ?? 0,
-        verifiedReports:    json['verified_reports'] ?? 0,
-        criticalReports:    json['critical_reports'] ?? 0,
-        totalTreesLost:     json['total_trees_lost'] ?? 0,
-        totalAreaAffected:  (json['total_area_affected'] as num?)?.toDouble() ?? 0,
+        totalReports:      _toInt(json['total_reports']),
+        verifiedReports:   _toInt(json['verified_reports']),
+        criticalReports:   _toInt(json['critical_reports']),
+        totalTreesLost:    _toInt(json['total_trees_lost']),
+        totalAreaAffected: _toDouble(json['total_area_affected']), // ← fix
       );
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0;
+  }
 }
 
 class AdminDashboard {

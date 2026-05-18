@@ -40,7 +40,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       slivers: [
         SliverAppBar(
           pinned: true,
-          expandedHeight: 200,
+          expandedHeight: 240,
           backgroundColor: AppColors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           flexibleSpace: FlexibleSpaceBar(

@@ -104,7 +104,7 @@ class AboutScreen extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   crossAxisSpacing: 12, mainAxisSpacing: 12,
-                  childAspectRatio: 2.2,
+                  childAspectRatio: 1.8,
                   children: _stats.map((s) => _StatCard(
                     icon: s['icon']!, val: s['val']!, label: s['label']!)).toList(),
                 ),
@@ -238,24 +238,28 @@ class _StatCard extends StatelessWidget {
       children: [
         Text(icon, style: const TextStyle(fontSize: 24)),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(val,
-              style: GoogleFonts.syne(
-                fontSize: 18, fontWeight: FontWeight.w700,
-                color: AppColors.textDk)),
-            Text(label,
-              style: GoogleFonts.dmSans(
-                fontSize: 10, color: AppColors.textLt)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(val,
+                style: GoogleFonts.syne(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDk)),
+              Text(label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 10, color: AppColors.textLt),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ],
     ),
   );
 }
-
 class _MissionCard extends StatelessWidget {
   final String icon, title, desc;
   const _MissionCard({required this.icon, required this.title, required this.desc});

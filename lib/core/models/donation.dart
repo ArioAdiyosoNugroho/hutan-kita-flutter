@@ -36,12 +36,12 @@ class Donation {
   });
 
   factory Donation.fromJson(Map<String, dynamic> json) => Donation(
-        id:              json['id'],
-        userId:          json['user_id'],
-        amount:          json['amount'] ?? 0,
+        id:              _toInt(json['id']),
+        userId:          json['user_id'] != null ? _toInt(json['user_id']) : null,
+        amount:          _toInt(json['amount']),
         currency:        json['currency'] ?? 'IDR',
         status:          json['status'] ?? 'pending',
-        treesCount:      json['trees_count'] ?? 0,
+        treesCount:      _toInt(json['trees_count']),
         donorName:       json['donor_name'],
         donorEmail:      json['donor_email'],
         donorMessage:    json['donor_message'],
@@ -54,6 +54,13 @@ class Donation {
         user:            json['user'] != null ? User.fromJson(json['user']) : null,
         amountFormatted: json['amount_formatted'],
       );
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
 
   String get statusLabel {
     switch (status) {
@@ -90,12 +97,19 @@ class LeaderboardEntry {
   });
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) => LeaderboardEntry(
-        rank:          json['rank'] ?? 0,
+        rank:          _toInt(json['rank']),
         user:          json['user'] != null ? User.fromJson(json['user']) : null,
-        totalTrees:    json['total_trees'] ?? 0,
+        totalTrees:    _toInt(json['total_trees']),
         totalAmount:   json['total_amount'] ?? 'Rp 0',
-        donationCount: json['donation_count'] ?? 0,
+        donationCount: _toInt(json['donation_count']),
       );
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
 }
 
 class DonationSummary {
@@ -112,9 +126,16 @@ class DonationSummary {
   });
 
   factory DonationSummary.fromJson(Map<String, dynamic> json) => DonationSummary(
-        totalTreesPlanted: json['total_trees_planted'] ?? 0,
-        totalDonors:       json['total_donors'] ?? 0,
-        totalDonated:      json['total_donated'] ?? 0,
-        totalDonations:    json['total_donations'] ?? 0,
+        totalTreesPlanted: _toInt(json['total_trees_planted']),
+        totalDonors:       _toInt(json['total_donors']),
+        totalDonated:      _toInt(json['total_donated']),
+        totalDonations:    _toInt(json['total_donations']),
       );
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
 }

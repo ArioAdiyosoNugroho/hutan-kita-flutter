@@ -45,6 +45,7 @@ class _MapScreenState extends State<MapScreen> {
       final data = res.data;
       final list = (data is List ? data : (data['data'] ?? [])) as List;
       _reports = list.map((e) => Report.fromJson(e)).toList();
+      _selected = null;
       _applyFilter();
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
@@ -52,6 +53,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _applyFilter() {
     setState(() {
+      _selected = null;
       _filtered = _filter == 'all'
           ? List.from(_reports)
           : _reports.where((r) => r.reportType == _filter).toList();
@@ -164,12 +166,24 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           Positioned(
-            bottom: 16, right: 60,
-            child: FloatingActionButton.small(
-              heroTag: 'refresh',
-              onPressed: _fetch,
-              backgroundColor: Colors.white,
-              child: const Icon(Icons.refresh_rounded, color: AppColors.greenMd),
+            bottom: 16, right: 12,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'refresh',
+                  onPressed: _fetch,
+                  backgroundColor: Colors.white,
+                  child: const Icon(Icons.refresh_rounded, color: AppColors.greenMd),
+                ),
+                const SizedBox(width: 8),
+                FloatingActionButton.small(
+                  heroTag: 'add_report',
+                  onPressed: () => context.push('/submit-report'),
+                  backgroundColor: AppColors.green,
+                  child: const Icon(Icons.add_rounded, color: Colors.white),
+                ),
+              ],
             ),
           ),
         ],
@@ -250,7 +264,10 @@ class _MapScreenState extends State<MapScreen> {
             : _reports.where((r) => r.reportType == key).length;
         final active = _filter == key;
         return GestureDetector(
-          onTap: () { setState(() => _filter = key); _applyFilter(); },
+          onTap: () {
+            setState(() => _filter = key);
+            _applyFilter();
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(

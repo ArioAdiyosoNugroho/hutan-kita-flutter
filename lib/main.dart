@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_colors.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -28,12 +29,19 @@ class HutanKitaApp extends StatelessWidget {
 
 class _AppRouter extends StatefulWidget {
   const _AppRouter();
+
   @override
   State<_AppRouter> createState() => _AppRouterState();
 }
 
 class _AppRouterState extends State<_AppRouter> {
-  late final _router = buildRouter(context.read<AuthProvider>());
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = buildRouter(context.read<AuthProvider>());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +106,8 @@ class _AppRouterState extends State<_AppRouter> {
       backgroundColor: AppColors.green,
       contentTextStyle: TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12))),
     ),
     cardTheme: const CardThemeData(
       color: AppColors.white,
